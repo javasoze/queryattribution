@@ -67,12 +67,13 @@ public class QueryAttributionTest {
         return idList;
       }
       long longVal = val.longValue();
-      
-      for (int i=0; i<64;++i) {
+      int i = 0;
+      while (longVal != 0) {
         if ((longVal & 1L) != 0L) {
           idList.add(i);
         }
         longVal>>=1;
+        i++;
       }
       return idList;
     }
