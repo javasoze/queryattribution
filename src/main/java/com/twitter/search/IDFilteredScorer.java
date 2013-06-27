@@ -9,11 +9,9 @@ public class IDFilteredScorer extends FilteredScorer {
 
   private final int id;
   private final ScorerAttributionCollector attrCollector;
-  private final int docbase;
   
-  public IDFilteredScorer(Weight weight, Scorer inner, int docbase, int id, ScorerAttributionCollector attrCollector) {
+  public IDFilteredScorer(Weight weight, Scorer inner, int id, ScorerAttributionCollector attrCollector) {
     super(weight, inner);
-    this.docbase = docbase;
     this.id = id;
     this.attrCollector = attrCollector;
   }
@@ -27,7 +25,7 @@ public class IDFilteredScorer extends FilteredScorer {
     int docid = super.nextDoc();
     if (attrCollector != null) {
       if (docid != NO_MORE_DOCS) {
-        attrCollector.collectScorerAttribution(docbase, docid, id, this);
+        attrCollector.collectScorerAttribution(docid, id, this);
       }
     }
     return docid;
@@ -38,7 +36,7 @@ public class IDFilteredScorer extends FilteredScorer {
     int docid = super.advance(target);
     if (attrCollector != null) {
       if (docid != NO_MORE_DOCS) {
-        attrCollector.collectScorerAttribution(docbase, docid, id, this);
+        attrCollector.collectScorerAttribution(docid, id, this);
       }
     }
     return docid;

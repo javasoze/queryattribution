@@ -42,10 +42,15 @@ public class QueryAttributionTest {
   static class IDScorerAttributionCollector implements ScorerAttributionCollector {
 
     private HashMap<Integer, Long> collectedMap = new HashMap<Integer, Long>();
+    private int docbase = 0;
     
     @Override
-    public void collectScorerAttribution(int docbase, int docid, int queryid,
-        Scorer sourceScorer) {
+    public void newReaderContext(AtomicReaderContext ctx) {
+      docbase = ctx.docBase;
+    }
+    
+    @Override
+    public void collectScorerAttribution(int docid, int queryid, Scorer sourceScorer) {
       int key = docbase+docid;
       Long val = collectedMap.get(key);
       long mask = 0x1 << queryid;

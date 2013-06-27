@@ -47,8 +47,11 @@ public class IDWeight extends Weight {
   @Override
   public Scorer scorer(AtomicReaderContext context, boolean scoreDocsInOrder,
       boolean topScorer, Bits acceptDocs) throws IOException {
+    if (attrCollector != null) {
+      attrCollector.newReaderContext(context);
+    }
     Scorer innerScorer = inner.scorer(context, scoreDocsInOrder, topScorer, acceptDocs);
-    return new IDFilteredScorer(this, innerScorer, context.docBase, id, attrCollector);
+    return new IDFilteredScorer(this, innerScorer, id, attrCollector);
   }
 
 }
