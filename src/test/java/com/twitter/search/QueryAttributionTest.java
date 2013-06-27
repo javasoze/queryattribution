@@ -140,15 +140,18 @@ public class QueryAttributionTest {
 
   @Test
   public void testNullAttrCollector() throws Exception{
+    Query q1 = buildQuery(docset1);
     Query q2 = buildQuery(docset2);
     Query q3 = buildQuery(docset3);
     
     Query f2 = new IDQuery(q2, 0, null);
     Query f3 = new IDQuery(q3, 1, null);
+    Query f1 = new IDQuery(q1, 2, null);
     
     BooleanQuery bq = new BooleanQuery();
     bq.add(f2, Occur.SHOULD);
     bq.add(f3, Occur.SHOULD);
+    bq.add(f1, Occur.MUST);
     
     int numhits = executeQuery(bq); 
 
