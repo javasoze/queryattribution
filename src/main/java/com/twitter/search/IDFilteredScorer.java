@@ -5,19 +5,19 @@ import java.io.IOException;
 import org.apache.lucene.search.Scorer;
 import org.apache.lucene.search.Weight;
 
-public class IDFilteredScorer extends FilteredScorer {
+public class IDFilteredScorer<E extends Enum<?>> extends FilteredScorer {
 
-  private final int id;
-  private final ScorerAttributionCollector attrCollector;
+  private final E queryEnum;
+  private final ScorerAttributionCollector<E> attrCollector;
   
-  public IDFilteredScorer(Weight weight, Scorer inner, int id, ScorerAttributionCollector attrCollector) {
+  public IDFilteredScorer(Weight weight, Scorer inner, E queryEnum, ScorerAttributionCollector<E> attrCollector) {
     super(weight, inner);
-    this.id = id;
+    this.queryEnum = queryEnum;
     this.attrCollector = attrCollector;
   }
 
-  public int getId() {
-    return id;
+  public E getEnum() {
+    return queryEnum;
   }
 
   @Override
@@ -25,7 +25,7 @@ public class IDFilteredScorer extends FilteredScorer {
     int docid = super.nextDoc();
     if (attrCollector != null) {
       if (docid != NO_MORE_DOCS) {
-        attrCollector.collectScorerAttribution(docid, id, this);
+        attrCollector.collectScorerAttribution(docid, queryEnum, this);
       }
     }
     return docid;
@@ -36,7 +36,7 @@ public class IDFilteredScorer extends FilteredScorer {
     int docid = super.advance(target);
     if (attrCollector != null) {
       if (docid != NO_MORE_DOCS) {
-        attrCollector.collectScorerAttribution(docid, id, this);
+        attrCollector.collectScorerAttribution(docid, queryEnum, this);
       }
     }
     return docid;

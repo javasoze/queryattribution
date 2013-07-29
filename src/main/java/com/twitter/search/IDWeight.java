@@ -9,17 +9,17 @@ import org.apache.lucene.search.Scorer;
 import org.apache.lucene.search.Weight;
 import org.apache.lucene.util.Bits;
 
-public class IDWeight extends Weight {
+public class IDWeight<E extends Enum<?>> extends Weight {
 
   protected final Weight inner;
-  private final int id;
-  private final ScorerAttributionCollector attrCollector;
-  private final IDQuery query;
+  private final E queryEnum;
+  private final ScorerAttributionCollector<E> attrCollector;
+  private final IDQuery<E> query;
   
-  public IDWeight(IDQuery query, Weight inner, int id, ScorerAttributionCollector attrCollector) {
+  public IDWeight(IDQuery<E> query, Weight inner, E queryEnum, ScorerAttributionCollector<E> attrCollector) {
     this.query = query;
     this.inner = inner;
-    this.id = id;
+    this.queryEnum = queryEnum;
     this.attrCollector = attrCollector; 
   }
   
@@ -51,7 +51,7 @@ public class IDWeight extends Weight {
       attrCollector.newReaderContext(context);
     }
     Scorer innerScorer = inner.scorer(context, scoreDocsInOrder, topScorer, acceptDocs);
-    return new IDFilteredScorer(this, innerScorer, id, attrCollector);
+    return new IDFilteredScorer<E>(this, innerScorer, queryEnum, attrCollector);
   }
 
 }

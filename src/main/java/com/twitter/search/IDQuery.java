@@ -7,29 +7,29 @@ import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Weight;
 
-public class IDQuery extends Query {
+public class IDQuery<E extends Enum<?>> extends Query {
 
   protected final Query inner;
-  private final int id;
-  private final ScorerAttributionCollector attrCollector;
+  private final E queryEnum;
+  private final ScorerAttributionCollector<E> attrCollector;
   
-  public IDQuery(Query inner, int id, ScorerAttributionCollector attrCollector) {
+  public IDQuery(Query inner,E queryEnum, ScorerAttributionCollector<E> attrCollector) {
     this.inner = inner;
-    this.id = id;
+    this.queryEnum = queryEnum;
     this.attrCollector = attrCollector;
   }
   
   @Override
   public Weight createWeight(IndexSearcher searcher) throws IOException {
     Weight innerWeight = inner.createWeight(searcher);
-    return new IDWeight(this, innerWeight, id, attrCollector);
+    return new IDWeight<E>(this, innerWeight, queryEnum, attrCollector);
   }
 
   @Override
   public Query rewrite(IndexReader reader) throws IOException {
     Query rewritten = inner.rewrite(reader);
     if (rewritten != inner) {
-      return new IDQuery(rewritten, id, attrCollector);
+      return new IDQuery<E>(rewritten, queryEnum, attrCollector);
     }
     return this;
   }

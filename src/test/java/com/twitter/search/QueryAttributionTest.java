@@ -2,8 +2,8 @@ package com.twitter.search;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.List;
 
 import junit.framework.TestCase;
 
@@ -39,19 +39,32 @@ public class QueryAttributionTest {
   static final long[] docset2 = new long[]{1,3,5,7,9};
   static final long[] docset3 = new long[]{2,4,6,8,10};
   
-  static class IDScorerAttributionCollector implements ScorerAttributionCollector {
+  static enum QueryTypes {
+	  Type0,
+	  Type1,
+	  Type2,
+	  Type3,
+	  Type4
+  }
+  
+  static class IDScorerAttributionCollector implements ScorerAttributionCollector<QueryTypes> {
 
     private HashMap<Integer, Long> collectedMap = new HashMap<Integer, Long>();
     private int docbase = 0;
     
+    private QueryTypes[] queryValues = QueryTypes.values();
+    
     @Override
     public void newReaderContext(AtomicReaderContext ctx) {
       docbase = ctx.docBase;
+      
     }
     
     @Override
-    public void collectScorerAttribution(int docid, int queryid, Scorer sourceScorer) {
+    public void collectScorerAttribution(int docid, QueryTypes queryEnum, Scorer sourceScorer) {
       int key = docbase+docid;
+      
+      int queryid = queryEnum.ordinal();
       Long val = collectedMap.get(key);
       long mask = 0x1 << queryid;
       if (val == null) {
@@ -64,6 +77,29 @@ public class QueryAttributionTest {
       }
     }
     
+    public EnumSet<QueryTypes> getEnumSet(int docid, int docbase) {
+    	int key = docid+docbase;
+        Long val = collectedMap.get(key);
+        EnumSet<QueryTypes> enumSet = EnumSet.noneOf(QueryTypes.class);
+        ArrayList<Integer> idList = new ArrayList<Integer>();
+        if (val == null) {
+            return enumSet;
+        }
+
+    	
+        long longVal = val.longValue();
+        int i = 0;
+        while (longVal != 0) {
+          if ((longVal & 1L) != 0L) {
+        	enumSet.add(queryValues[i]);
+            idList.add(i);
+          }
+          longVal>>=1;
+          i++;
+        }
+        return enumSet;
+    }
+    /*
     public List<Integer> getQueryIds(int docid, int docbase) {
       int key = docid+docbase;
       Long val = collectedMap.get(key);
@@ -81,7 +117,7 @@ public class QueryAttributionTest {
         i++;
       }
       return idList;
-    }
+    }*/
     
     @Override
     public String toString() {
@@ -144,9 +180,9 @@ public class QueryAttributionTest {
     Query q2 = buildQuery(docset2);
     Query q3 = buildQuery(docset3);
     
-    Query f2 = new IDQuery(q2, 0, null);
-    Query f3 = new IDQuery(q3, 1, null);
-    Query f1 = new IDQuery(q1, 2, null);
+    Query f2 = new IDQuery<QueryTypes>(q2, QueryTypes.Type0, null);
+    Query f3 = new IDQuery<QueryTypes>(q3, QueryTypes.Type1, null);
+    Query f1 = new IDQuery<QueryTypes>(q1, QueryTypes.Type2, null);
     
     BooleanQuery bq = new BooleanQuery();
     bq.add(f2, Occur.SHOULD);
@@ -165,8 +201,8 @@ public class QueryAttributionTest {
     Query q2 = buildQuery(docset2);
     Query q3 = buildQuery(docset3);
     
-    Query f2 = new IDQuery(q2, 0, attrCollector);
-    Query f3 = new IDQuery(q3, 1, attrCollector);
+    Query f2 = new IDQuery<QueryTypes>(q2, QueryTypes.Type0, attrCollector);
+    Query f3 = new IDQuery<QueryTypes>(q3, QueryTypes.Type1, attrCollector);
     
     BooleanQuery bq = new BooleanQuery();
     bq.add(f2, Occur.SHOULD);
@@ -176,14 +212,14 @@ public class QueryAttributionTest {
     
     TestCase.assertEquals(10, numhits);
     for (int i=1; i<11;++i) {
-      List<Integer> queryIds = attrCollector.getQueryIds(i, 0);
+      EnumSet<QueryTypes> queryIds = attrCollector.getEnumSet(i, 0);
       TestCase.assertEquals(1, queryIds.size());
-      int id = queryIds.get(0);      
+            
       if (i%2==0) {
-        TestCase.assertEquals(1, id);
+        TestCase.assertTrue(queryIds.contains(QueryTypes.Type1));
       }
       else {
-        TestCase.assertEquals(0, id);
+        TestCase.assertTrue(queryIds.contains(QueryTypes.Type0));
       }
     }
   }
@@ -197,41 +233,41 @@ public class QueryAttributionTest {
     Query q3 = buildQuery(docset3);
     
     
-    Query f2 = new IDQuery(q2, 0, attrCollector);
-    Query f3 = new IDQuery(q3, 1, attrCollector);
-    Query f1 = new IDQuery(q1, 2, attrCollector);
+    Query f2 = new IDQuery<QueryTypes>(q2, QueryTypes.Type0, attrCollector);
+    Query f3 = new IDQuery<QueryTypes>(q3, QueryTypes.Type1, attrCollector);
+    Query f1 = new IDQuery<QueryTypes>(q1, QueryTypes.Type2, attrCollector);
     
     BooleanQuery bq = new BooleanQuery();
     bq.add(f2, Occur.SHOULD);
     bq.add(f3, Occur.SHOULD);
     
-    Query f4 = new IDQuery(bq, 3, attrCollector);
+    Query f4 = new IDQuery<QueryTypes>(bq, QueryTypes.Type3, attrCollector);
     
     BooleanQuery bq2 = new BooleanQuery();
     bq2.add(f4, Occur.MUST);
     bq2.add(f1, Occur.MUST);
     
     
-    Query f5 = new IDQuery(bq2, 4, attrCollector);
+    Query f5 = new IDQuery<QueryTypes>(bq2, QueryTypes.Type4, attrCollector);
     
     int numhits = executeQuery(f5);
     
     TestCase.assertEquals(10, numhits);
     
     for (int i=1; i<11;++i) {
-      List<Integer> queryIds = attrCollector.getQueryIds(i, 0);
+      EnumSet<QueryTypes> queryIds = attrCollector.getEnumSet(i, 0);
       TestCase.assertFalse(queryIds.isEmpty());
       TestCase.assertEquals(4, queryIds.size());
       
-      TestCase.assertTrue(queryIds.contains(4));
-      TestCase.assertTrue(queryIds.contains(2));
-      TestCase.assertTrue(queryIds.contains(3));
+      TestCase.assertTrue(queryIds.contains(QueryTypes.Type4));
+      TestCase.assertTrue(queryIds.contains(QueryTypes.Type2));
+      TestCase.assertTrue(queryIds.contains(QueryTypes.Type3));
       
       if (i%2==0) {
-        TestCase.assertTrue(queryIds.contains(1));
+        TestCase.assertTrue(queryIds.contains(QueryTypes.Type1));
       }
       else {
-        TestCase.assertTrue(queryIds.contains(0));
+        TestCase.assertTrue(queryIds.contains(QueryTypes.Type0));
       }
     }
   }
