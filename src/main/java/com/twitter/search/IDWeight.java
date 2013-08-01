@@ -9,7 +9,7 @@ import org.apache.lucene.search.Scorer;
 import org.apache.lucene.search.Weight;
 import org.apache.lucene.util.Bits;
 
-public class IDWeight<E extends Enum<?>> extends Weight {
+public class IDWeight<E extends Enum<E>> extends Weight {
 
   protected final Weight inner;
   private final E queryEnum;

@@ -5,7 +5,7 @@ import java.io.IOException;
 import org.apache.lucene.search.Scorer;
 import org.apache.lucene.search.Weight;
 
-public class IDFilteredScorer<E extends Enum<?>> extends FilteredScorer {
+public class IDFilteredScorer<E extends Enum<E>> extends FilteredScorer {
 
   private final E queryEnum;
   private final ScorerAttributionCollector<E> attrCollector;

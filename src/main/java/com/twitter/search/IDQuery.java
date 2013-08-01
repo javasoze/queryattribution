@@ -7,7 +7,7 @@ import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Weight;
 
-public class IDQuery<E extends Enum<?>> extends Query {
+public class IDQuery<E extends Enum<E>> extends Query {
 
   protected final Query inner;
   private final E queryEnum;
